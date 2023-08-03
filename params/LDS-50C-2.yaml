@@ -1,7 +1,7 @@
 bluesea_node:
   ros__parameters:
   #ROS2#
-    frame_id: "map"
+    frame_id: "laser_link"
     topic: "scan"
   #DATA#
     dev_id: -1
@@ -25,7 +25,7 @@ bluesea_node:
     error_scale: 0.9
 #CONNECT#
     type: "uart"
-    port: "/dev/ttyUSB0"
+    port: "/dev/ttyS6"
     baud_rate: 500000  #rate_list[ 384000, 500000, 768000, 921600 ]#
     #FITTER#
     filter_open: false  #滤波生效开关
