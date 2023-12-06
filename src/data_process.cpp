@@ -1,7 +1,7 @@
 
 #include "data_process.h"
 
-void get_data(const sensor_msgs::msg::LaserScan& scan, int idx, double& dist, double& energy)
+void get_data(const LaserScanMsg& scan, int idx, double& dist, double& energy)
 {
     if (idx < 0) 
         idx += scan.ranges.size();
@@ -11,7 +11,7 @@ void get_data(const sensor_msgs::msg::LaserScan& scan, int idx, double& dist, do
     energy = scan.intensities[idx];
 }
 
-bool is_high(const sensor_msgs::msg::LaserScan& scan, int idx)
+bool is_high(const LaserScanMsg& scan, int idx)
 {
     double dist, energy;
     get_data(scan, idx, dist, energy);
@@ -19,7 +19,7 @@ bool is_high(const sensor_msgs::msg::LaserScan& scan, int idx)
     return dist < 1000000 && energy > 200;
 }
 
-bool data_process(sensor_msgs::msg::LaserScan& scan)
+bool data_process(LaserScanMsg& scan)
 {
     int idx = 0;
     while (idx < scan.ranges.size())

@@ -383,7 +383,7 @@ void getMSGData(LaserScanMsg &msg, RawData *fan, bool reversed,
 }
 void PublishLaserScanFan(
 #if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
-	std::shared_ptr<ros::Publisher> laser_pub,
+    std::shared_ptr<ros::Publisher> laser_pub,
 #else
     rclcpp::Publisher<LaserScanMsg>::SharedPtr laser_pub,
 #endif
@@ -434,9 +434,12 @@ void PublishLaserScanFan(
     tmpdata[1].N     = fan->N - index;
 
     LaserScanMsg msg;
+#if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
+    msg.header.stamp = ros::Time::now();
+#else
     msg.header.stamp.sec     = fan->ts[0];
     msg.header.stamp.nanosec = fan->ts[1];
-
+#endif
     msg.header.frame_id = frame_id;
 
     double scan_time   = 1 / 100.;
@@ -543,16 +546,16 @@ int time_cmp(const uint32_t *t1, const uint32_t *t2)
 
 void PublishLaserScan(
 #if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
-	std::shared_ptr<ros::Publisher> laser_pub,
+    std::shared_ptr<ros::Publisher> laser_pub,
 #else
     rclcpp::Publisher<LaserScanMsg>::SharedPtr laser_pub,
 #endif
-                      int nfan, RawData **fans, std::string &frame_id,
-                      double min_dist, double max_dist, bool with_filter, double min_ang, double max_ang,
-                      bool inverted, bool reversed, double zero_shift,
-                      bool from_zero, uint32_t *ts_beg, uint32_t *ts_end,
-                      const std::vector<Range> &custom_masks, int collect_angle,
-                      bool filter_open, int filter_type, float max_range, float min_range, double max_range_difference, int filter_window)
+    int nfan, RawData **fans, std::string &frame_id,
+    double min_dist, double max_dist, bool with_filter, double min_ang, double max_ang,
+    bool inverted, bool reversed, double zero_shift,
+    bool from_zero, uint32_t *ts_beg, uint32_t *ts_end,
+    const std::vector<Range> &custom_masks, int collect_angle,
+    bool filter_open, int filter_type, float max_range, float min_range, double max_range_difference, int filter_window)
 {
     LaserScanMsg msg, output_scan;
     int N = 0;
@@ -572,8 +575,12 @@ void PublishLaserScan(
         }
     }
     // make  min_ang max_ang  convert to mask
+#if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
+    msg.header.stamp = ros::Time::now();
+#else
     msg.header.stamp.sec     = ts_beg[0];
     msg.header.stamp.nanosec = ts_beg[1];
+#endif
 
     double ti = double(ts_beg[0]) + double(ts_beg[1]) / 1000000000.0;
     double tx = double(ts_end[0]) + double(ts_end[1]) / 1000000000.0;
@@ -738,8 +745,8 @@ void setup_params(bluesea2::DynParamsConfig &config, uint32_t level)
 #endif
 
 bool should_start = true;
-// service call back function
-bool stop_motor(const std::shared_ptr<EmptySrv::Request>, std::shared_ptr<EmptySrv::Response>)
+#if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
+bool stop_motor(EmptySrv::Request& req, EmptySrv::Response& res)
 {
 
     should_start = false;
@@ -749,7 +756,7 @@ bool stop_motor(const std::shared_ptr<EmptySrv::Request>, std::shared_ptr<EmptyS
 }
 
 // service call back function
-bool start_motor(const std::shared_ptr<EmptySrv::Request>, std::shared_ptr<EmptySrv::Response>)
+bool start_motor(EmptySrv::Request& req, EmptySrv::Response& res)
 {
     should_start = true;
     char cmd[]   = "LSTARH";
@@ -758,6 +765,28 @@ bool start_motor(const std::shared_ptr<EmptySrv::Request>, std::shared_ptr<Empty
 
     return SendCmd(6, cmd);
 }
+#else
+// service call back function
+bool stop_motor(const std::shared_ptr<EmptySrv::Request> req, std::shared_ptr<EmptySrv::Response> res)
+{
+
+    should_start = false;
+    // ROS_INFO("Stop motor");
+    char cmd[] = "LSTOPH";
+    return SendCmd(6, cmd);
+}
+
+// service call back function
+bool start_motor(const std::shared_ptr<EmptySrv::Request> req, std::shared_ptr<EmptySrv::Response> res)
+{
+    should_start = true;
+    char cmd[]   = "LSTARH";
+
+    // ROS_INFO("Stop motor");
+
+    return SendCmd(6, cmd);
+}
+#endif
 void split(const std::string &s, char delim, int *elems)
 {
     int idx = 0;
@@ -775,10 +804,22 @@ void split(const std::string &s, char delim, int *elems)
     node->declare_parameter<TYPE>(NAME, VAR); \
     node->get_parameter(NAME, VAR);
 
-bool get_range_param(std::shared_ptr<rclcpp::Node> node, const char *name, Range &range)
+bool get_range_param(
+#if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
+    std::shared_ptr<ros::NodeHandle> node,
+#else
+    std::shared_ptr<rclcpp::Node> node, 
+#endif
+    const char *name, Range &range)
 {
     // std::string str=name;
+#if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
+    std::string mask = "";
+    std::string str = "bluesea_node/" + std::string(name);
+    node->getParam(str, mask);
+#else
     READ_PARAM(std::string, name, mask, "");
+#endif
     if (mask != "") {
         int index = mask.find(",");
         float min = atof(mask.substr(0, index).c_str());
@@ -869,6 +910,283 @@ int main(int argc, char *argv[])
 #if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
     ros::init(argc, argv, "bluesea_node");
     auto node = std::make_shared<ros::NodeHandle>();
+
+    // topic
+    laser_topics[0] = "scan";
+    node->getParam("bluesea_node/topic", laser_topics[0]);
+
+    // cloud_topic
+    cloud_topics[0] = "scan";
+    node->getParam("bluesea_node/cloud_topic", cloud_topics[0]);
+
+    // frame information
+    std::string frame_id = "LH_laser";
+    node->getParam("bluesea_node/frame_id", frame_id);
+    /*****************************ROS arg end************************************/
+    std::string type = "uart";
+    node->getParam("bluesea_node/type", type);
+    g_type = type;
+
+    // for serial port comm
+    std::string port      = "/dev/ttyUSB0";
+    int baud_rate         = 500000;
+    std::string rate_list = "230400,256000,500000,768000,1000000";
+
+    node->getParam("bluesea_node/port", port);
+    node->getParam("bluesea_node/baud_rate", baud_rate);
+
+    node->getParam("bluesea_node/rate_list", rate_list);
+    int rates[100];
+    split(rate_list, ',', rates);
+
+    bool is_group_listener = false;
+    node->getParam("bluesea_node/group_listener", is_group_listener);
+
+    /*****************************DATA arg start************************************/
+
+    // for network comm
+    lidar_ips[0] = "192.168.158.91";
+    node->getParam("bluesea_node/lidar_ip", lidar_ips[0]);
+
+    lidar_ports[0] = 6543;
+    node->getParam("bluesea_node/lidar_port", lidar_ports[0]);
+
+    std::string group_ip = "224.1.1.91";
+    int local_port       = 50122;
+    node->getParam("bluesea_node/group_ip", group_ip);
+    node->getParam("bluesea_node/local_port", local_port);
+
+    int lidar_count = 1;
+    for (int i = 1; i < MAX_LIDARS; i++) {
+        char s[32], t[32];
+
+        sprintf(s, "lidar%d_ip", i);
+        lidar_ips[i] = "";
+        node->getParam(s, lidar_ips[i]);
+        // READ_PARAM(std::string, s, lidar_ips[i], std::string(""));
+        if (lidar_ips[i].length() == 0)
+            break;
+
+        sprintf(s, "bluesea_node/lidar%d_port", i);
+        lidar_ports[i] = 0;
+        node->getParam(s, lidar_ports[i]);
+        // READ_PARAM(int, s, lidar_ports[i], 0);
+        // priv_nh.param(s, lidar_ports[i], 0);
+        if (lidar_ports[i] <= 0)
+            break;
+
+        sprintf(s, "bluesea_node/topic%d", i);
+        sprintf(t, "scan%d", i);
+        laser_topics[i] = t;
+        node->getParam(s, laser_topics[i]);
+
+        sprintf(s, "bluesea_node/cloud_topic%d", i);
+        sprintf(t, "cloud%d", i);
+        cloud_topics[i] = t;
+        node->getParam(s, cloud_topics[i]);
+        // READ_PARAM(std::string, s, topics[i], std::string(t));
+        lidar_count++;
+    }
+    printf("we will connect to %d lidars\n", lidar_count);
+    if (type == "udp") {
+        for (int i = 0; i < lidar_count; i++) {
+            printf("lidar[%d] address %s:%d, topic `%s\n", i,
+                   lidar_ips[i].c_str(), lidar_ports[i],
+                   laser_topics[i].c_str());
+        }
+    }
+
+    int dev_id = ANYONE;
+    int raw_bytes = 3;
+    bool with_chk = true;
+    bool inverted = false;
+    bool reversed = false;
+
+    bool output_scan = true;
+    bool output_cloud = false;
+    bool output_360 = true;
+
+    // angle filter
+    bool with_angle_filter = false;
+    double min_angle = -M_PI;
+    double  max_angle = M_PI;
+    node->getParam("bluesea_node/dev_id", dev_id);
+
+    // raw data format
+    // READ_PARAM(int, "normal_size", normal_size, -1); // -1 : allow all packet, N : drop packets whose points less than N
+    node->getParam("bluesea_node/raw_bytes", raw_bytes);
+
+    node->getParam("bluesea_node/with_checksum", with_chk);
+
+    // is lidar inverted
+    node->getParam("bluesea_node/inverted", inverted);
+    node->getParam("bluesea_node/reversed", reversed);
+
+    // data output
+    // true: enable output angle+distance mode, 0: disable
+    node->getParam("bluesea_node/output_scan", output_scan);
+    // false: enable output xyz format, 0 : disable
+    node->getParam("bluesea_node/output_cloud", output_cloud);
+    // true: packet data of 360 degree (multiple RawData), publish once
+    node->getParam("bluesea_node/output_360", output_360);
+
+    // angle filter
+    // true: enable angle filter, false: disable
+    node->getParam("bluesea_node/with_angle_filter", with_angle_filter);
+    // angle filter's low threshold, default value: -pi
+    node->getParam("bluesea_node/min_angle", min_angle);
+    // angle filters' up threashold, default value: pi
+    node->getParam("bluesea_node/max_angle", max_angle);
+
+    if (inverted) {
+        double tmp = min_angle * -1;
+        min_angle  = max_angle * -1;
+        max_angle  = tmp;
+    }
+    if (reversed) {
+        double tmp = min_angle * -1;
+        min_angle  = max_angle * -1;
+        max_angle  = tmp;
+    }
+    std::vector<Range> custom_masks;
+    Range range1, range2;
+    if (min_angle < max_angle) {
+        range1.min = -180;
+        range1.max = min_angle / M_PI * 180;
+        range2.min = max_angle / M_PI * 180;
+        range2.max = 180;
+        custom_masks.push_back(range1);
+        custom_masks.push_back(range2);
+        // printf("Visible range:%lf %lf %lf %lf\n", range1.min, range1.max, range2.min, range2.max);
+    }
+
+    for (int i = 1;; i++) {
+        char name[32];
+        sprintf(name, "mask%d", i);
+        Range range;
+        if (!get_range_param(node, name, range))
+            break;
+        if (inverted) {
+            double tmp = range.min * -1;
+            range.min  = range.max * -1;
+            range.max  = tmp;
+        }
+        if (reversed) {
+            double tmp = range.min * -1;
+            range.min  = range.max * -1;
+            range.max  = tmp;
+        }
+        double min_angle_tmp = min_angle / M_PI * 180;
+        double max_angle_tmp = max_angle / M_PI * 180;
+
+        if (min_angle_tmp <= range.min) {
+            if (range.max <= max_angle_tmp) {
+            } else {
+                range.max = max_angle_tmp;
+            }
+        } else {
+            if (range.max <= max_angle_tmp) {
+                range.min = min_angle_tmp;
+            } else {
+                range.min = min_angle_tmp;
+                range.max = max_angle_tmp;
+            }
+        }
+        custom_masks.push_back(range);
+        // printf("Invisible range:%lf %lf\n", range.min, range.max);
+    }
+
+    // range limitation
+    double max_dist = 9999.0; // max detection range, default value: 9999M
+    double min_dist = 0.0;
+
+    // zero position
+    double zero_shift = 0.0;
+
+    bool from_zero = false;
+    int collect_angle = 0;
+    // log
+    bool Savelog = false;
+    std::string logPath = std::string("/opt/log");
+
+    int error_circle = 3;
+    double error_scale = 0.9;
+
+    bool filter_open = false;
+    int filter_type = 1;
+    double max_range = 20.0;
+    double min_range = 0.5;
+    double max_range_difference = 0.1;
+    int filter_window = 1;
+
+    int uuid = -1;
+    int model = -1;
+
+    int init_rpm = -1; // set motor RPM
+    bool hard_resample = false;      // resample angle resolution
+    bool with_soft_resample = false; // resample angle resolution
+    double resample_res = -1.0;       // resample angle resolution
+
+    // max detection range, default value: 9999M
+    node->getParam("bluesea_node/max_dist", max_dist);
+    node->getParam("bluesea_node/min_dist", min_dist);
+
+    // zero position
+    node->getParam("bluesea_node/zero_shift", zero_shift);
+
+    node->getParam("bluesea_node/from_zero", from_zero);
+    node->getParam("bluesea_node/collect_angle", collect_angle);
+    // log
+    node->getParam("bluesea_node/Savelog", Savelog);
+    node->getParam("bluesea_node/logPath", logPath);
+
+    node->getParam("bluesea_node/error_circle", error_circle);
+    node->getParam("bluesea_node/error_scale", error_scale);
+
+    /*****************************DATA arg end************************************/
+    /*******************************FITTER arg start******************************/
+    node->getParam("bluesea_node/filter_open", filter_open);
+    node->getParam("bluesea_node/filter_type", filter_type);
+    node->getParam("bluesea_node/max_range", max_range);
+    node->getParam("bluesea_node/min_range", min_range);
+    node->getParam("bluesea_node/max_range_difference", max_range_difference);
+    node->getParam("bluesea_node/filter_window", filter_window);
+    /*******************************FITTER arg end******************************/
+    /*****************************GET arg start************************************/
+    node->getParam("bluesea_node/uuid", uuid);
+    node->getParam("bluesea_node/model", model);
+    /*****************************GET arg end************************************/
+    /*****************************SET arg start************************************/
+    node->getParam("bluesea_node/rpm", init_rpm);
+    // angle composate
+    double resample_res2;
+    // resample angle resolution
+    node->getParam("bluesea_node/hard_resample", hard_resample);
+    // resample angle resolution
+    node->getParam("bluesea_node/soft_resample", with_soft_resample);
+    // resample angle resolution
+    node->getParam("bluesea_node/resample_res", resample_res);
+
+    if (!hard_resample) {
+        resample_res2 = -1.0;
+    } else {
+        resample_res2 = resample_res;
+    }
+
+    int with_smooth = -1;     // lidar data smooth filter
+    int with_deshadow = -1; // data shadow filter
+    int enable_alarm_msg = -1;  // let lidar upload alarm message
+    int direction = -1;
+    int unit_is_mm = -1; // 0 : distance is CM, 1: MM
+    int with_confidence = -1;
+    int ats = -1;
+    node->getParam("bluesea_node/with_smooth", with_smooth);
+    node->getParam("bluesea_node/with_deshadow", with_deshadow);
+    node->getParam("bluesea_node/alarm_msg", enable_alarm_msg);
+    node->getParam("bluesea_node/direction", direction);
+    node->getParam("bluesea_node/unit_is_mm", unit_is_mm);
+    node->getParam("bluesea_node/with_confidence", with_confidence);
+    node->getParam("bluesea_node/ats", ats);
 #else
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared("bluesea_node");
@@ -877,7 +1195,6 @@ int main(int argc, char *argv[])
     qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
     qos.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
     // std::shared_ptr<rclcpp::Node>ptr = rclcpp::Node::make_shared("bluesea_node");
-#endif
 
     /*****************************ROS arg start************************************/
     // topic
@@ -1084,10 +1401,11 @@ int main(int argc, char *argv[])
     READ_PARAM(bool, "soft_resample", with_soft_resample, false); // resample angle resolution
     READ_PARAM(double, "resample_res", resample_res, -1.0);       // resample angle resolution
 
-    if (!hard_resample)
+    if (!hard_resample) {
         resample_res2 = -1.0;
-    else
+    } else {
         resample_res2 = resample_res;
+    }
 
     READ_PARAM(int, "with_smooth", with_smooth, -1);     // lidar data smooth filter
     READ_PARAM(int, "with_deshadow", with_deshadow, -1); // data shadow filter
@@ -1096,6 +1414,7 @@ int main(int argc, char *argv[])
     READ_PARAM(int, "unit_is_mm", unit_is_mm, -1); // 0 : distance is CM, 1: MM
     READ_PARAM(int, "with_confidence", with_confidence, -1);
     READ_PARAM(int, "ats", ats, -1);
+#endif
     /*****************************SET arg end************************************/
 
     CommandList cmdlist;
@@ -1135,20 +1454,20 @@ int main(int argc, char *argv[])
     }
 
 #if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
-	std::shared_ptr<ros::Publisher> laser_pubs[MAX_LIDARS];
-	for (int i = 0; i < lidar_count; i++) {
+    std::shared_ptr<ros::Publisher> laser_pubs[MAX_LIDARS];
+    for (int i = 0; i < lidar_count; i++) {
         if (output_scan) {
-			laser_pubs[i] = std::make_shared<ros::Publisher>(node->advertise<LaserScanMsg>(laser_topics[i], 10));
+            laser_pubs[i] = std::make_shared<ros::Publisher>(node->advertise<LaserScanMsg>(laser_topics[i], 10));
         }
     }
 
-	std::shared_ptr<ros::ServiceServer> service = std::make_shared<ros::ServiceServer>(node->advertiseService("start", &start_motor));
-	std::shared_ptr<ros::ServiceServer> service2 = std::make_shared<ros::ServiceServer>(node->advertiseService("stop", &stop_motor));
+    std::shared_ptr<ros::ServiceServer> service  = std::make_shared<ros::ServiceServer>(node->advertiseService("start", start_motor));
+    std::shared_ptr<ros::ServiceServer> service2 = std::make_shared<ros::ServiceServer>(node->advertiseService("stop", stop_motor));
 
-	ros::WallRate loop_rate(100);
+    ros::WallRate loop_rate(100);
     while (ros::ok())
 #else
-	rclcpp::Publisher<LaserScanMsg>::SharedPtr laser_pubs[MAX_LIDARS];
+    rclcpp::Publisher<LaserScanMsg>::SharedPtr laser_pubs[MAX_LIDARS];
     for (int i = 0; i < lidar_count; i++) {
         if (output_scan) {
             laser_pubs[i] = node->create_publisher<LaserScanMsg>(laser_topics[i], qos);
@@ -1158,7 +1477,7 @@ int main(int argc, char *argv[])
     rclcpp::Service<EmptySrv>::SharedPtr service  = node->create_service<EmptySrv>("start", &start_motor);
     rclcpp::Service<EmptySrv>::SharedPtr service2 = node->create_service<EmptySrv>("stop", &stop_motor);
 
-	rclcpp::WallRate loop_rate(100);
+    rclcpp::WallRate loop_rate(100);
 
     while (rclcpp::ok())
 #endif

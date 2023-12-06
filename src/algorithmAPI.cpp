@@ -1,6 +1,6 @@
 #include "algorithmAPI.h"
 #include<stdio.h>
-bool checkWindowValid(const sensor_msgs::msg::LaserScan &scan, size_t idx, size_t window, double max_range_difference)
+bool checkWindowValid(const LaserScanMsg &scan, size_t idx, size_t window, double max_range_difference)
 {
   const float &range = scan.ranges[idx];
   if (range != range)
@@ -23,7 +23,7 @@ bool checkWindowValid(const sensor_msgs::msg::LaserScan &scan, size_t idx, size_
   return true;
 }
 
-bool checkWindowValid2(const sensor_msgs::msg::LaserScan &scan, size_t idx, size_t window, double max_distance)
+bool checkWindowValid2(const LaserScanMsg &scan, size_t idx, size_t window, double max_distance)
 {
   int num_neighbors = 0;
   const float &r1 = scan.ranges[idx]; // 当前点云的距离数据
@@ -63,7 +63,7 @@ bool checkWindowValid2(const sensor_msgs::msg::LaserScan &scan, size_t idx, size
   }
 }
 
-bool filter(const sensor_msgs::msg::LaserScan &input_scan, sensor_msgs::msg::LaserScan &output_scan, int filter_type, double max_range, double min_range, double max_range_difference, int filter_window)
+bool filter(const LaserScanMsg &input_scan, LaserScanMsg &output_scan, int filter_type, double max_range, double min_range, double max_range_difference, int filter_window)
 {
   output_scan= input_scan;
 
