@@ -19,19 +19,82 @@ else()
 add_definitions(-DROS_DISTRO_F)
 endif()
 
-# find dependencies
+message(STATUS "${LIB_NAME} Ros version : $ENV{ROS_DISTRO}")
+if ($ENV{ROS_DISTRO} MATCHES "iron")
+  add_definitions(-DUSE_IRON_VERSION)
+  set(USE_ROS1_MIDDLE_PRICE OFF)
+elseif ($ENV{ROS_DISTRO} MATCHES "humble")
+  add_definitions(-DUSE_HUMBLE_VERSION)
+  set(USE_ROS1_MIDDLE_PRICE OFF)
+elseif ($ENV{ROS_DISTRO} MATCHES "foxy")
+  add_definitions(-DUSE_FOXY_VERSION)
+  set(USE_ROS1_MIDDLE_PRICE OFF)
+elseif ($ENV{ROS_DISTRO} MATCHES "dashing")
+  add_definitions(-DUSE_DASHING_VERSION)
+  set(USE_ROS1_MIDDLE_PRICE OFF)
+elseif ($ENV{ROS_DISTRO} MATCHES "noetic")
+  add_definitions(-DUSE_ROS_NORTIC_VERSION)
+  set(USE_ROS1_MIDDLE_PRICE ON)
+elseif ($ENV{ROS_DISTRO} MATCHES "melodic")
+  add_definitions(-DUSE_ROS_MELODIC_VERSION)
+  set(USE_ROS1_MIDDLE_PRICE ON)
+endif()
+
+find_package(spdlog REQUIRED)
+find_package(rmw REQUIRED)
+
+include_directories(
+  ${sensor_msgs_INCLUDE_DIRS}
+  include
+)
+
+file(GLOB main_srcs 
+  src/bluesea_node.cpp
+  src/parser.cpp
+  src/uart_reader.cpp
+  src/udp_reader.cpp
+  src/tcp_reader.cpp
+  src/data_process.cpp
+  src/algorithmAPI.cpp
+  src/uart.c
+)
+
+if(USE_ROS1_MIDDLE_PRICE)
+######################## 使用ROS1 作为中间件 ###########################
+find_package(catkin REQUIRED COMPONENTS
+  rosconsole
+  roscpp
+  sensor_msgs
+  std_srvs
+)
+
+catkin_package(
+)
+
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+)
+
+add_executable(bluesea_node ${main_srcs})
+target_link_libraries(bluesea_node ${catkin_LIBRARIES} spdlog::spdlog)
+
+add_executable(bluesea_node_client src/bluesea_client.cpp)
+target_link_libraries(bluesea_node_client ${catkin_LIBRARIES})
+
+install(TARGETS bluesea_node bluesea_node_client
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+#######################################################################
+else()
+######################## 使用ROS2 作为中间件 ###########################
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
-
-include_directories(${sensor_msgs_INCLUDE_DIRS})
-
-add_executable(bluesea_node src/bluesea_node.cpp src/parser.cpp src/uart_reader.cpp src/udp_reader.cpp src/tcp_reader.cpp src/data_process.cpp src/algorithmAPI.cpp src/uart.c)
+add_executable(bluesea_node ${main_srcs})
 ament_target_dependencies(bluesea_node
   "rclcpp"
   "sensor_msgs"
@@ -68,3 +131,5 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
+#######################################################################
+endif()

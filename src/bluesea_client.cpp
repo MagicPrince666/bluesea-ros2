@@ -1,8 +1,15 @@
+#if defined(USE_ROS_NORTIC_VERSION) || defined(USE_ROS_MELODIC_VERSION)
+#include <ros/ros.h>
+#include <sensor_msgs/LaserScan.h>
+#include <std_srvs/Empty.h>
+#else
 #include "rclcpp/clock.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time_source.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include <std_srvs/srv/empty.hpp>
+#endif
+
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
