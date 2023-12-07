@@ -95,6 +95,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
 add_executable(bluesea_node ${main_srcs})
+target_link_libraries(bluesea_node spdlog::spdlog)
 ament_target_dependencies(bluesea_node
   "rclcpp"
   "sensor_msgs"
@@ -103,6 +104,7 @@ ament_target_dependencies(bluesea_node
   "std_srvs"
 )
 add_executable(bluesea_node_client src/bluesea_client.cpp)
+target_link_libraries(bluesea_node_client spdlog::spdlog)
 ament_target_dependencies(bluesea_node_client rclcpp std_srvs)
 
 target_include_directories(bluesea_node PUBLIC
