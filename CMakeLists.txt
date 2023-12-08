@@ -79,7 +79,7 @@ add_executable(bluesea_node ${main_srcs})
 target_link_libraries(bluesea_node ${catkin_LIBRARIES} spdlog::spdlog)
 
 add_executable(bluesea_node_client src/bluesea_client.cpp)
-target_link_libraries(bluesea_node_client ${catkin_LIBRARIES})
+target_link_libraries(bluesea_node_client ${catkin_LIBRARIES} spdlog::spdlog)
 
 install(TARGETS bluesea_node bluesea_node_client
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
