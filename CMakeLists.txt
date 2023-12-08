@@ -44,7 +44,6 @@ find_package(spdlog REQUIRED)
 find_package(rmw REQUIRED)
 
 include_directories(
-  ${sensor_msgs_INCLUDE_DIRS}
   include
 )
 
@@ -93,6 +92,10 @@ find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+
+include_directories(
+  ${sensor_msgs_INCLUDE_DIRS}
+)
 
 add_executable(bluesea_node ${main_srcs})
 target_link_libraries(bluesea_node spdlog::spdlog)
