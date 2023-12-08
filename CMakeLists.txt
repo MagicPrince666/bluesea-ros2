@@ -23,24 +23,32 @@ message(STATUS "${LIB_NAME} Ros version : $ENV{ROS_DISTRO}")
 if ($ENV{ROS_DISTRO} MATCHES "iron")
   add_definitions(-DUSE_IRON_VERSION)
   set(USE_ROS1_MIDDLE_PRICE OFF)
+  find_package(spdlog REQUIRED)
+  set(LIBSPDLOG spdlog::spdlog)
 elseif ($ENV{ROS_DISTRO} MATCHES "humble")
   add_definitions(-DUSE_HUMBLE_VERSION)
   set(USE_ROS1_MIDDLE_PRICE OFF)
+  find_package(spdlog REQUIRED)
+  set(LIBSPDLOG spdlog::spdlog)
 elseif ($ENV{ROS_DISTRO} MATCHES "foxy")
   add_definitions(-DUSE_FOXY_VERSION)
   set(USE_ROS1_MIDDLE_PRICE OFF)
+  find_package(spdlog REQUIRED)
+  set(LIBSPDLOG spdlog::spdlog)
 elseif ($ENV{ROS_DISTRO} MATCHES "dashing")
   add_definitions(-DUSE_DASHING_VERSION)
   set(USE_ROS1_MIDDLE_PRICE OFF)
+  include_directories(include/spdlog)
 elseif ($ENV{ROS_DISTRO} MATCHES "noetic")
   add_definitions(-DUSE_ROS_NORTIC_VERSION)
   set(USE_ROS1_MIDDLE_PRICE ON)
+  include_directories(include/spdlog)
 elseif ($ENV{ROS_DISTRO} MATCHES "melodic")
   add_definitions(-DUSE_ROS_MELODIC_VERSION)
   set(USE_ROS1_MIDDLE_PRICE ON)
+  include_directories(include/spdlog)
 endif()
 
-find_package(spdlog REQUIRED)
 find_package(rmw REQUIRED)
 
 include_directories(
@@ -75,10 +83,10 @@ include_directories(
 )
 
 add_executable(bluesea_node ${main_srcs})
-target_link_libraries(bluesea_node ${catkin_LIBRARIES} spdlog::spdlog)
+target_link_libraries(bluesea_node ${catkin_LIBRARIES} ${LIBSPDLOG})
 
 add_executable(bluesea_node_client src/bluesea_client.cpp)
-target_link_libraries(bluesea_node_client ${catkin_LIBRARIES} spdlog::spdlog)
+target_link_libraries(bluesea_node_client ${catkin_LIBRARIES} ${LIBSPDLOG})
 
 install(TARGETS bluesea_node bluesea_node_client
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -98,7 +106,7 @@ include_directories(
 )
 
 add_executable(bluesea_node ${main_srcs})
-target_link_libraries(bluesea_node spdlog::spdlog)
+target_link_libraries(bluesea_node ${LIBSPDLOG})
 ament_target_dependencies(bluesea_node
   "rclcpp"
   "sensor_msgs"
@@ -107,7 +115,7 @@ ament_target_dependencies(bluesea_node
   "std_srvs"
 )
 add_executable(bluesea_node_client src/bluesea_client.cpp)
-target_link_libraries(bluesea_node_client spdlog::spdlog)
+target_link_libraries(bluesea_node_client ${LIBSPDLOG})
 ament_target_dependencies(bluesea_node_client rclcpp std_srvs)
 
 target_include_directories(bluesea_node PUBLIC
