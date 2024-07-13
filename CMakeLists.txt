@@ -58,8 +58,6 @@ elseif ($ENV{ROS_DISTRO} MATCHES "melodic")
   include_directories(include/spdlog)
 endif()
 
-find_package(rmw REQUIRED)
-
 include_directories(
   include
 )

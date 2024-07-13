@@ -913,18 +913,18 @@ int main(int argc, char *argv[])
 
     // topic
     laser_topics[0] = "scan";
-    node->getParam("bluesea_node/topic", laser_topics[0]);
+    node->getParam("bluesea_node/ros__parameters/topic", laser_topics[0]);
 
     // cloud_topic
     cloud_topics[0] = "scan";
-    node->getParam("bluesea_node/cloud_topic", cloud_topics[0]);
+    node->getParam("bluesea_node/ros__parameters/cloud_topic", cloud_topics[0]);
 
     // frame information
     std::string frame_id = "LH_laser";
-    node->getParam("bluesea_node/frame_id", frame_id);
+    node->getParam("bluesea_node/ros__parameters/frame_id", frame_id);
     /*****************************ROS arg end************************************/
     std::string type = "uart";
-    node->getParam("bluesea_node/type", type);
+    node->getParam("bluesea_node/ros__parameters/type", type);
     g_type = type;
 
     // for serial port comm
@@ -932,35 +932,35 @@ int main(int argc, char *argv[])
     int baud_rate         = 500000;
     std::string rate_list = "230400,256000,500000,768000,1000000";
 
-    node->getParam("bluesea_node/port", port);
-    node->getParam("bluesea_node/baud_rate", baud_rate);
+    node->getParam("bluesea_node/ros__parameters/port", port);
+    node->getParam("bluesea_node/ros__parameters/baud_rate", baud_rate);
 
-    node->getParam("bluesea_node/rate_list", rate_list);
+    node->getParam("bluesea_node/ros__parameters/rate_list", rate_list);
     int rates[100];
     split(rate_list, ',', rates);
 
     bool is_group_listener = false;
-    node->getParam("bluesea_node/group_listener", is_group_listener);
+    node->getParam("bluesea_node/ros__parameters/group_listener", is_group_listener);
 
     /*****************************DATA arg start************************************/
 
     // for network comm
     lidar_ips[0] = "192.168.158.91";
-    node->getParam("bluesea_node/lidar_ip", lidar_ips[0]);
+    node->getParam("bluesea_node/ros__parameters/lidar_ip", lidar_ips[0]);
 
     lidar_ports[0] = 6543;
-    node->getParam("bluesea_node/lidar_port", lidar_ports[0]);
+    node->getParam("bluesea_node/ros__parameters/lidar_port", lidar_ports[0]);
 
     std::string group_ip = "224.1.1.91";
     int local_port       = 50122;
-    node->getParam("bluesea_node/group_ip", group_ip);
-    node->getParam("bluesea_node/local_port", local_port);
+    node->getParam("bluesea_node/ros__parameters/group_ip", group_ip);
+    node->getParam("bluesea_node/ros__parameters/local_port", local_port);
 
     int lidar_count = 1;
     for (int i = 1; i < MAX_LIDARS; i++) {
         char s[32], t[32];
 
-        sprintf(s, "lidar%d_ip", i);
+        sprintf(s, "bluesea_node/ros__parameters/lidar%d_ip", i);
         lidar_ips[i] = "";
         node->getParam(s, lidar_ips[i]);
         // READ_PARAM(std::string, s, lidar_ips[i], std::string(""));
@@ -1010,33 +1010,33 @@ int main(int argc, char *argv[])
     bool with_angle_filter = false;
     double min_angle = -M_PI;
     double  max_angle = M_PI;
-    node->getParam("bluesea_node/dev_id", dev_id);
+    node->getParam("bluesea_node/ros__parameters/dev_id", dev_id);
 
     // raw data format
     // READ_PARAM(int, "normal_size", normal_size, -1); // -1 : allow all packet, N : drop packets whose points less than N
-    node->getParam("bluesea_node/raw_bytes", raw_bytes);
+    node->getParam("bluesea_node/ros__parameters/raw_bytes", raw_bytes);
 
-    node->getParam("bluesea_node/with_checksum", with_chk);
+    node->getParam("bluesea_node/ros__parameters/with_checksum", with_chk);
 
     // is lidar inverted
-    node->getParam("bluesea_node/inverted", inverted);
-    node->getParam("bluesea_node/reversed", reversed);
+    node->getParam("bluesea_node/ros__parameters/inverted", inverted);
+    node->getParam("bluesea_node/ros__parameters/reversed", reversed);
 
     // data output
     // true: enable output angle+distance mode, 0: disable
-    node->getParam("bluesea_node/output_scan", output_scan);
+    node->getParam("bluesea_node/ros__parameters/output_scan", output_scan);
     // false: enable output xyz format, 0 : disable
-    node->getParam("bluesea_node/output_cloud", output_cloud);
+    node->getParam("bluesea_node/ros__parameters/output_cloud", output_cloud);
     // true: packet data of 360 degree (multiple RawData), publish once
-    node->getParam("bluesea_node/output_360", output_360);
+    node->getParam("bluesea_node/ros__parameters/output_360", output_360);
 
     // angle filter
     // true: enable angle filter, false: disable
-    node->getParam("bluesea_node/with_angle_filter", with_angle_filter);
+    node->getParam("bluesea_node/ros__parameters/with_angle_filter", with_angle_filter);
     // angle filter's low threshold, default value: -pi
-    node->getParam("bluesea_node/min_angle", min_angle);
+    node->getParam("bluesea_node/ros__parameters/min_angle", min_angle);
     // angle filters' up threashold, default value: pi
-    node->getParam("bluesea_node/max_angle", max_angle);
+    node->getParam("bluesea_node/ros__parameters/max_angle", max_angle);
 
     if (inverted) {
         double tmp = min_angle * -1;
@@ -1128,44 +1128,44 @@ int main(int argc, char *argv[])
     double resample_res = -1.0;       // resample angle resolution
 
     // max detection range, default value: 9999M
-    node->getParam("bluesea_node/max_dist", max_dist);
-    node->getParam("bluesea_node/min_dist", min_dist);
+    node->getParam("bluesea_node/ros__parameters/max_dist", max_dist);
+    node->getParam("bluesea_node/ros__parameters/min_dist", min_dist);
 
     // zero position
-    node->getParam("bluesea_node/zero_shift", zero_shift);
+    node->getParam("bluesea_node/ros__parameters/zero_shift", zero_shift);
 
-    node->getParam("bluesea_node/from_zero", from_zero);
-    node->getParam("bluesea_node/collect_angle", collect_angle);
+    node->getParam("bluesea_node/ros__parameters/from_zero", from_zero);
+    node->getParam("bluesea_node/ros__parameters/collect_angle", collect_angle);
     // log
-    node->getParam("bluesea_node/Savelog", Savelog);
-    node->getParam("bluesea_node/logPath", logPath);
+    node->getParam("bluesea_node/ros__parameters/Savelog", Savelog);
+    node->getParam("bluesea_node/ros__parameters/logPath", logPath);
 
-    node->getParam("bluesea_node/error_circle", error_circle);
-    node->getParam("bluesea_node/error_scale", error_scale);
+    node->getParam("bluesea_node/ros__parameters/error_circle", error_circle);
+    node->getParam("bluesea_node/ros__parameters/error_scale", error_scale);
 
     /*****************************DATA arg end************************************/
     /*******************************FITTER arg start******************************/
-    node->getParam("bluesea_node/filter_open", filter_open);
-    node->getParam("bluesea_node/filter_type", filter_type);
-    node->getParam("bluesea_node/max_range", max_range);
-    node->getParam("bluesea_node/min_range", min_range);
-    node->getParam("bluesea_node/max_range_difference", max_range_difference);
-    node->getParam("bluesea_node/filter_window", filter_window);
+    node->getParam("bluesea_node/ros__parameters/filter_open", filter_open);
+    node->getParam("bluesea_node/ros__parameters/filter_type", filter_type);
+    node->getParam("bluesea_node/ros__parameters/max_range", max_range);
+    node->getParam("bluesea_node/ros__parameters/min_range", min_range);
+    node->getParam("bluesea_node/ros__parameters/max_range_difference", max_range_difference);
+    node->getParam("bluesea_node/ros__parameters/filter_window", filter_window);
     /*******************************FITTER arg end******************************/
     /*****************************GET arg start************************************/
-    node->getParam("bluesea_node/uuid", uuid);
-    node->getParam("bluesea_node/model", model);
+    node->getParam("bluesea_node/ros__parameters/uuid", uuid);
+    node->getParam("bluesea_node/ros__parameters/model", model);
     /*****************************GET arg end************************************/
     /*****************************SET arg start************************************/
-    node->getParam("bluesea_node/rpm", init_rpm);
+    node->getParam("bluesea_node/ros__parameters/rpm", init_rpm);
     // angle composate
     double resample_res2;
     // resample angle resolution
-    node->getParam("bluesea_node/hard_resample", hard_resample);
+    node->getParam("bluesea_node/ros__parameters/hard_resample", hard_resample);
     // resample angle resolution
-    node->getParam("bluesea_node/soft_resample", with_soft_resample);
+    node->getParam("bluesea_node/ros__parameters/soft_resample", with_soft_resample);
     // resample angle resolution
-    node->getParam("bluesea_node/resample_res", resample_res);
+    node->getParam("bluesea_node/ros__parameters/resample_res", resample_res);
 
     if (!hard_resample) {
         resample_res2 = -1.0;
@@ -1180,13 +1180,13 @@ int main(int argc, char *argv[])
     int unit_is_mm = -1; // 0 : distance is CM, 1: MM
     int with_confidence = -1;
     int ats = -1;
-    node->getParam("bluesea_node/with_smooth", with_smooth);
-    node->getParam("bluesea_node/with_deshadow", with_deshadow);
-    node->getParam("bluesea_node/alarm_msg", enable_alarm_msg);
-    node->getParam("bluesea_node/direction", direction);
-    node->getParam("bluesea_node/unit_is_mm", unit_is_mm);
-    node->getParam("bluesea_node/with_confidence", with_confidence);
-    node->getParam("bluesea_node/ats", ats);
+    node->getParam("bluesea_node/ros__parameters/with_smooth", with_smooth);
+    node->getParam("bluesea_node/ros__parameters/with_deshadow", with_deshadow);
+    node->getParam("bluesea_node/ros__parameters/alarm_msg", enable_alarm_msg);
+    node->getParam("bluesea_node/ros__parameters/direction", direction);
+    node->getParam("bluesea_node/ros__parameters/unit_is_mm", unit_is_mm);
+    node->getParam("bluesea_node/ros__parameters/with_confidence", with_confidence);
+    node->getParam("bluesea_node/ros__parameters/ats", ats);
 #else
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared("bluesea_node");
